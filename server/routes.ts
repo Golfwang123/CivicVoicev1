@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateEmailTemplate, regenerateEmailWithTone } from "./openai";
 import { sendEmail, normalizeEmail } from "./email";
-import { insertProjectSchema, insertEmailSchema, insertUpvoteSchema } from "@shared/schema";
+import { insertProjectSchema, insertEmailSchema, insertUpvoteSchema, insertCommentSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -232,6 +232,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting activities:", error);
       res.status(500).json({ message: "Failed to get activities" });
+    }
+  });
+  
+  // Get comments for a project
+  app.get("/api/projects/:id/comments", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const project = await storage.getProjectById(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      const comments = await storage.getCommentsByProject(projectId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error getting comments:", error);
+      res.status(500).json({ message: "Failed to get comments" });
+    }
+  });
+  
+  // Create a comment for a project
+  app.post("/api/projects/:id/comments", async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      
+      const project = await storage.getProjectById(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Merge the projectId from the URL with the request body
+      const commentData = insertCommentSchema.parse({
+        ...req.body,
+        projectId
+      });
+      
+      const comment = await storage.createComment(commentData);
+      res.status(201).json(comment);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
     }
   });
 
