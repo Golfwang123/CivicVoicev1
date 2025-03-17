@@ -35,6 +35,7 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ project }: ProjectCardProps) {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   
   // Format issue type for display
@@ -87,7 +88,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               </span>
               <h3 
                 className="text-lg font-semibold text-gray-900 hover:text-primary transition-colors cursor-pointer"
-                onClick={() => window.location.href = `/projects/${project.id}`}
+                onClick={() => navigate(`/projects/${project.id}`)}
               >
                 {project.title}
               </h3>
@@ -136,7 +137,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               <Button
                 variant="secondary"
                 className="text-xs py-1.5"
-                onClick={() => window.location.href = `/projects/${project.id}`}
+                onClick={() => navigate(`/projects/${project.id}`)}
               >
                 <i className="fas fa-eye mr-1"></i>
                 View Details
