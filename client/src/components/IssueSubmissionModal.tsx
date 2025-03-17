@@ -1,0 +1,508 @@
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { IssueType, UrgencyLevel, EmailTemplate, Project } from "@/lib/types";
+import MapComponent from "@/components/MapComponent";
+import EmailPreviewModal from "@/components/EmailPreviewModal";
+import SubmissionSuccessModal from "@/components/SubmissionSuccessModal";
+
+interface IssueSubmissionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+// Steps in the submission process
+type SubmissionStep = "details" | "email" | "success";
+
+export default function IssueSubmissionModal({ isOpen, onClose }: IssueSubmissionModalProps) {
+  const { toast } = useToast();
+  const [currentStep, setCurrentStep] = useState<SubmissionStep>("details");
+  const [submittedProject, setSubmittedProject] = useState<Project | null>(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    issueType: "" as IssueType,
+    location: "",
+    latitude: "37.7749", // Default to San Francisco
+    longitude: "-122.4194",
+    urgencyLevel: "medium" as UrgencyLevel,
+    contactEmail: "",
+  });
+  
+  // Email template state
+  const [emailTemplate, setEmailTemplate] = useState<EmailTemplate>({
+    emailBody: "",
+    emailSubject: "",
+    emailTo: "",
+  });
+  
+  // Generate email mutation
+  const generateEmailMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/generate-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          issueType: formData.issueType,
+          location: formData.location,
+          description: formData.description,
+          urgencyLevel: formData.urgencyLevel,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to generate email");
+      }
+      
+      return response.json() as Promise<EmailTemplate>;
+    },
+    onSuccess: (data) => {
+      setEmailTemplate(data);
+      setCurrentStep("email");
+    },
+  });
+  
+  // Create project mutation
+  const createProjectMutation = useMutation({
+    mutationFn: async () => {
+      // First generate the final project submission
+      const projectData = {
+        ...formData,
+        emailTemplate: emailTemplate.emailBody,
+        emailSubject: emailTemplate.emailSubject,
+        emailRecipient: emailTemplate.emailTo,
+        contactEmail: formData.contactEmail || null,
+      };
+      
+      const response = await apiRequest("POST", "/api/projects", projectData);
+      return response.json() as Promise<Project>;
+    },
+    onSuccess: (data) => {
+      setSubmittedProject(data);
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      setCurrentStep("success");
+    },
+  });
+  
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+  
+  // Handle select changes
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+  
+  // Handle location selection on the map
+  const handleLocationSelect = (lat: string, lng: string) => {
+    setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+  };
+  
+  // Handle form submission to generate email
+  const handleGenerateEmail = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!formData.title || !formData.description || !formData.issueType || !formData.location) {
+      toast({
+        variant: "destructive",
+        title: "Missing information",
+        description: "Please fill out all required fields.",
+      });
+      return;
+    }
+    
+    // Generate email
+    generateEmailMutation.mutate();
+  };
+  
+  // Handle back button
+  const handleBackToDetails = () => {
+    setCurrentStep("details");
+  };
+  
+  // Handle send email
+  const handleSendEmail = () => {
+    createProjectMutation.mutate();
+  };
+  
+  // Handle close modals and reset state
+  const handleCloseAll = () => {
+    setCurrentStep("details");
+    setFormData({
+      title: "",
+      description: "",
+      issueType: "" as IssueType,
+      location: "",
+      latitude: "37.7749",
+      longitude: "-122.4194",
+      urgencyLevel: "medium" as UrgencyLevel,
+      contactEmail: "",
+    });
+    setEmailTemplate({
+      emailBody: "",
+      emailSubject: "",
+      emailTo: "",
+    });
+    setSubmittedProject(null);
+    onClose();
+  };
+  
+  // Render the current step
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case "details":
+        return (
+          <form onSubmit={handleGenerateEmail} className="space-y-6">
+            {/* Step indicator */}
+            <div className="relative">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 bg-primary text-white flex items-center justify-center rounded-full">1</div>
+                  <span className="text-xs mt-1 text-gray-600">Issue Details</span>
+                </div>
+                <div className="flex-grow mx-4 h-0.5 bg-gray-200"></div>
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 bg-gray-200 text-gray-600 flex items-center justify-center rounded-full">2</div>
+                  <span className="text-xs mt-1 text-gray-600">Email Preview</span>
+                </div>
+                <div className="flex-grow mx-4 h-0.5 bg-gray-200"></div>
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 bg-gray-200 text-gray-600 flex items-center justify-center rounded-full">3</div>
+                  <span className="text-xs mt-1 text-gray-600">Submit</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Issue title */}
+            <div>
+              <Label htmlFor="title">Issue Title</Label>
+              <Input
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="Brief title describing the issue"
+                className="mt-1"
+                required
+              />
+            </div>
+            
+            {/* Issue type */}
+            <div>
+              <Label htmlFor="issueType">Issue Type</Label>
+              <Select
+                onValueChange={(value) => handleSelectChange("issueType", value)}
+                value={formData.issueType}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select an issue type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Select an issue type</SelectItem>
+                  <SelectItem value="crosswalk">Crosswalk Needed</SelectItem>
+                  <SelectItem value="pothole">Pothole</SelectItem>
+                  <SelectItem value="sidewalk">Sidewalk Damage</SelectItem>
+                  <SelectItem value="streetlight">Street Light Needed</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Location */}
+            <div>
+              <Label htmlFor="location">Location</Label>
+              <div className="mt-1 flex rounded-md shadow-sm">
+                <Input
+                  type="text"
+                  name="location"
+                  id="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  placeholder="Enter address or intersection"
+                  className="rounded-l-md rounded-r-none"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-l-none"
+                >
+                  <i className="fas fa-map-marker-alt mr-2"></i>
+                  Map
+                </Button>
+              </div>
+              
+              {/* Map */}
+              <div className="mt-3 h-48 bg-gray-100 rounded-md relative">
+                <MapComponent
+                  onLocationSelect={handleLocationSelect}
+                  initialLocation={{
+                    lat: formData.latitude,
+                    lng: formData.longitude,
+                  }}
+                  height="12rem"
+                />
+              </div>
+            </div>
+            
+            {/* Description */}
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={3}
+                placeholder="Describe the issue and why it needs attention"
+                className="mt-1"
+                required
+              />
+              <p className="mt-2 text-sm text-gray-500">Brief description of the issue and its impact on the community.</p>
+            </div>
+            
+            {/* Urgency level */}
+            <div>
+              <Label>Urgency Level</Label>
+              <RadioGroup
+                className="mt-2 flex items-center space-x-4"
+                value={formData.urgencyLevel}
+                onValueChange={(value) => handleSelectChange("urgencyLevel", value)}
+              >
+                <div className="flex items-center">
+                  <RadioGroupItem id="urgency-low" value="low" />
+                  <Label htmlFor="urgency-low" className="ml-2">Low</Label>
+                </div>
+                <div className="flex items-center">
+                  <RadioGroupItem id="urgency-medium" value="medium" />
+                  <Label htmlFor="urgency-medium" className="ml-2">Medium</Label>
+                </div>
+                <div className="flex items-center">
+                  <RadioGroupItem id="urgency-high" value="high" />
+                  <Label htmlFor="urgency-high" className="ml-2">High</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            {/* Contact info */}
+            <div>
+              <Label htmlFor="contactEmail">Your Contact Info (optional)</Label>
+              <Input
+                type="email"
+                id="contactEmail"
+                name="contactEmail"
+                value={formData.contactEmail}
+                onChange={handleInputChange}
+                placeholder="email@example.com"
+                className="mt-1"
+              />
+              <p className="mt-2 text-sm text-gray-500">We'll use this to send you updates about this issue.</p>
+            </div>
+            
+            {/* Submit button */}
+            <div className="mt-6 flex justify-end">
+              <Button
+                type="submit"
+                className="bg-primary hover:bg-primary/90 text-white"
+                disabled={generateEmailMutation.isPending}
+              >
+                {generateEmailMutation.isPending ? "Generating..." : "Generate Email Draft"}
+              </Button>
+            </div>
+          </form>
+        );
+      
+      case "email":
+        return (
+          <div className="space-y-6">
+            {/* Step indicator */}
+            <div className="relative">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 bg-gray-200 text-gray-600 flex items-center justify-center rounded-full">
+                    <i className="fas fa-check text-primary"></i>
+                  </div>
+                  <span className="text-xs mt-1 text-gray-600">Issue Details</span>
+                </div>
+                <div className="flex-grow mx-4 h-0.5 bg-primary"></div>
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 bg-primary text-white flex items-center justify-center rounded-full">2</div>
+                  <span className="text-xs mt-1 text-gray-600">Email Preview</span>
+                </div>
+                <div className="flex-grow mx-4 h-0.5 bg-gray-200"></div>
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 bg-gray-200 text-gray-600 flex items-center justify-center rounded-full">3</div>
+                  <span className="text-xs mt-1 text-gray-600">Submit</span>
+                </div>
+              </div>
+            </div>
+
+            {/* AI-generated email preview */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-sm text-gray-500 mb-2">This AI-generated email is based on the information you provided:</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700">To:</Label>
+                  <Input
+                    type="text"
+                    value={emailTemplate.emailTo}
+                    className="mt-1 bg-white"
+                    readOnly
+                  />
+                </div>
+                
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700">Subject:</Label>
+                  <Input
+                    type="text"
+                    value={emailTemplate.emailSubject}
+                    className="mt-1 bg-white"
+                    readOnly
+                  />
+                </div>
+                
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700">Email Body:</Label>
+                  <Textarea
+                    rows={10}
+                    value={emailTemplate.emailBody}
+                    className="mt-1 bg-white"
+                    readOnly
+                  />
+                </div>
+                
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700">Email Tone Adjustment:</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant={null}
+                      className="px-3 py-1 bg-primary text-white text-xs rounded-full"
+                    >
+                      Professional
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={null}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded-full hover:bg-gray-300"
+                    >
+                      Formal
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={null}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded-full hover:bg-gray-300"
+                    >
+                      Assertive
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={null}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded-full hover:bg-gray-300"
+                    >
+                      Concerned
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={null}
+                      className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded-full hover:bg-gray-300"
+                    >
+                      Personal
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBackToDetails}
+                disabled={createProjectMutation.isPending}
+              >
+                Back to Details
+              </Button>
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mr-2"
+                  onClick={() => generateEmailMutation.mutate()}
+                  disabled={generateEmailMutation.isPending || createProjectMutation.isPending}
+                >
+                  <i className="fas fa-sync-alt mr-2"></i>
+                  Regenerate
+                </Button>
+                <Button
+                  type="button"
+                  className="bg-primary hover:bg-primary/90 text-white"
+                  onClick={handleSendEmail}
+                  disabled={createProjectMutation.isPending}
+                >
+                  <i className="fas fa-paper-plane mr-2"></i>
+                  {createProjectMutation.isPending ? "Sending..." : "Send Email"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case "success":
+        return (
+          <SubmissionSuccessModal 
+            project={submittedProject}
+            onClose={handleCloseAll}
+          />
+        );
+      
+      default:
+        return null;
+    }
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={handleCloseAll}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center border-b border-gray-200 px-6 py-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {currentStep === "details" ? "Submit a New Issue" : 
+             currentStep === "email" ? "Review & Customize Email" : 
+             "Success!"}
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCloseAll}
+            className="text-gray-400 hover:text-gray-500"
+          >
+            <i className="fas fa-times text-xl"></i>
+          </Button>
+        </div>
+        
+        <div className="px-6 py-4">
+          {renderStepContent()}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
