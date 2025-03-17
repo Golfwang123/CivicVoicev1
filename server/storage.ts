@@ -3,7 +3,8 @@ import {
   Project, InsertProject, 
   Upvote, InsertUpvote, 
   Email, InsertEmail, 
-  Activity, InsertActivity 
+  Activity, InsertActivity,
+  Comment, InsertComment
 } from "@shared/schema";
 
 // Interface for storage operations

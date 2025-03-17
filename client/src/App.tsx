@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Navbar from "@/components/Navbar";
 import CommunityBoard from "@/pages/CommunityBoard";
 import IssueSubmissionForm from "@/pages/IssueSubmissionForm";
+import ProjectDetails from "@/pages/ProjectDetails";
 
 function Router() {
   const { toast } = useToast();
@@ -28,6 +29,7 @@ function Router() {
       <Switch>
         <Route path="/" component={CommunityBoard} />
         <Route path="/submit" component={IssueSubmissionForm} />
+        <Route path="/projects/:id" component={ProjectDetails} />
         <Route component={NotFound} />
       </Switch>
     </>
