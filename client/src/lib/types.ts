@@ -79,3 +79,11 @@ export interface IssueSubmissionData {
   emailSubject: string;
   emailRecipient: string;
 }
+
+export interface Comment {
+  id: number;
+  projectId: number;
+  text: string;
+  commenterName: string;
+  createdAt: string;
+}

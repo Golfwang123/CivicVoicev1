@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Project } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,8 +85,16 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeColorMap[project.issueType] || "bg-gray-100 text-gray-800"} mb-2`}>
                 {formatIssueType(project.issueType)}
               </span>
-              <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
-              <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+              <h3 
+                className="text-lg font-semibold text-gray-900 hover:text-primary transition-colors cursor-pointer"
+                onClick={() => window.location.href = `/projects/${project.id}`}
+              >
+                {project.title}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">{project.description.length > 150 
+                ? `${project.description.substring(0, 150)}...` 
+                : project.description}
+              </p>
             </div>
             <div className="flex items-center text-gray-700">
               <button 
@@ -123,14 +132,24 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                 {project.location}
               </span>
             </div>
-            <Button 
-              variant="outline" 
-              className="border-primary text-primary hover:bg-primary hover:text-white transition-colors text-xs py-1.5"
-              onClick={handleEmailClick}
-            >
-              <i className="fas fa-envelope mr-1"></i>
-              Send Email
-            </Button>
+            <div className="flex space-x-2">
+              <Button
+                variant="secondary"
+                className="text-xs py-1.5"
+                onClick={() => window.location.href = `/projects/${project.id}`}
+              >
+                <i className="fas fa-eye mr-1"></i>
+                View Details
+              </Button>
+              <Button 
+                variant="outline" 
+                className="border-primary text-primary hover:bg-primary hover:text-white transition-colors text-xs py-1.5"
+                onClick={handleEmailClick}
+              >
+                <i className="fas fa-envelope mr-1"></i>
+                Send Email
+              </Button>
+            </div>
           </div>
         </div>
       </div>
