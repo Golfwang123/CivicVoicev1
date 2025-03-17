@@ -7,7 +7,6 @@ import FilterBar from "@/components/FilterBar";
 import MapComponent from "@/components/MapComponent";
 import CommunityStats from "@/components/CommunityStats";
 import RecentActivity from "@/components/RecentActivity";
-import IssueSubmissionModal from "@/components/IssueSubmissionModal";
 import { Button } from "@/components/ui/button";
 
 export default function CommunityBoard() {
@@ -15,7 +14,6 @@ export default function CommunityBoard() {
   const [status, setStatus] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [page, setPage] = useState(1);
-  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   
   const itemsPerPage = 10;
 
@@ -61,13 +59,14 @@ export default function CommunityBoard() {
           <div className="bg-white shadow-sm rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Community Board</h1>
-              <Button 
-                className="bg-primary hover:bg-primary/90 text-white"
-                onClick={() => setShowSubmissionModal(true)}
-              >
-                <i className="fas fa-plus mr-2"></i>
-                Submit New Issue
-              </Button>
+              <Link href="/submit">
+                <Button 
+                  className="bg-primary hover:bg-primary/90 text-white"
+                >
+                  <i className="fas fa-plus mr-2"></i>
+                  Submit New Issue
+                </Button>
+              </Link>
             </div>
             
             {/* Filter Bar */}
@@ -158,14 +157,6 @@ export default function CommunityBoard() {
           <RecentActivity />
         </div>
       </div>
-
-      {/* Issue Submission Modal */}
-      {showSubmissionModal && (
-        <IssueSubmissionModal 
-          isOpen={showSubmissionModal} 
-          onClose={() => setShowSubmissionModal(false)} 
-        />
-      )}
     </main>
   );
 }

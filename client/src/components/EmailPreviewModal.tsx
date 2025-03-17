@@ -109,6 +109,7 @@ export default function EmailPreviewModal({ project, isOpen, onClose }: EmailPre
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
+          <DialogTitle className="sr-only">Success</DialogTitle>
           <div className="p-6 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <i className="fas fa-check text-green-600 text-2xl"></i>
@@ -127,8 +128,8 @@ export default function EmailPreviewModal({ project, isOpen, onClose }: EmailPre
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center border-b border-gray-200 px-6 py-4">
-          <h2 className="text-xl font-semibold text-gray-900">Send Email to Support This Issue</h2>
+        <DialogTitle className="text-xl font-semibold text-gray-900 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <span>Send Email to Support This Issue</span>
           <Button
             variant="ghost"
             size="icon"
@@ -137,7 +138,7 @@ export default function EmailPreviewModal({ project, isOpen, onClose }: EmailPre
           >
             <i className="fas fa-times text-xl"></i>
           </Button>
-        </div>
+        </DialogTitle>
         
         <div className="px-6 py-4">
           <div className="space-y-6">
