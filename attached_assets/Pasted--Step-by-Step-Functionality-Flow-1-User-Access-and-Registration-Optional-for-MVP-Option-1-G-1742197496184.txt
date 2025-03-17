@@ -1,0 +1,117 @@
+🌐 Step-by-Step Functionality Flow
+1. User Access and Registration (Optional for MVP)
+	•	Option 1: Guest Access
+	•	User visits the website and can interact without creating an account.
+	•	They can view projects, upvote, and send emails.
+	•	Option 2: User Registration (Optional for MVP)
+	•	Users can register an account via email or Google login.
+	•	Registered users can track which projects they’ve supported and view their activity history.
+
+2. Issue Submission (Core Feature)
+	•	User clicks “Submit a New Project” on the homepage.
+	•	They fill out a form with the following fields:
+	•	Issue Type: Dropdown (e.g., Crosswalk, Pothole, Sidewalk Damage, etc.).
+	•	Location Pin: The user drops a pin on an interactive map to mark the exact location.
+	•	Description: Optional text to describe the issue in more detail.
+	•	Urgency Level: Low, Medium, High (optional).
+	•	Contact Info (optional, if they want updates).
+	•	Submit Button: Once the form is filled out, the user clicks submit.
+
+3. AI Email Generation
+	•	Upon submission, the backend triggers the OpenAI API to generate an email draft using the provided details.
+	•	The prompt might look like:
+	“Write a professional email to a local city official requesting the installation of a crosswalk at [Location]. Mention the urgency as [Urgency Level] and describe the issue as [User Description].”
+	•	User Preview:
+	•	The AI-generated email is presented to the user for review.
+	•	Users can:
+	•	Edit the email for personalization.
+	•	Adjust Tone (e.g., more formal, assertive).
+	•	Send it directly or Save as Draft.
+
+4. Project Creation on Community Board
+	•	Once the user sends the email, the project is automatically posted to the Community Board.
+	•	Each project card on the board includes:
+	•	Title: Auto-generated or provided by the user.
+	•	Location: Linked to the map pin.
+	•	Short Description: Basic details about the issue.
+	•	AI-Generated Email (viewable by others).
+	•	Upvote Button: Allows others to support the project.
+	•	Progress Bar: Initial status set to “Idea Submitted.”
+	•	“Send This Email” Button: Allows others to send the same email to the city official.
+
+5. Mass Email Participation
+	•	Other users browse the community board and find projects they support.
+	•	To participate:
+	•	They click “Send This Email” on the project card.
+	•	The AI-generated email is displayed.
+	•	Users can choose to:
+	•	Send the email as-is.
+	•	Customize it with additional comments.
+	•	Opt to remain anonymous or sign the email.
+	•	The email is sent to the relevant official, and the system updates the “Emails Sent” counter.
+
+6. Progress Tracking and Updates
+	•	Each project has a progress bar with predefined stages:
+	•	Idea Submitted (automatically set when first posted).
+	•	Community Support (automatically progresses based on upvotes and email counts).
+	•	Email Campaign Active (when a threshold of emails is sent).
+	•	Official Acknowledgment (optional, if an official responds).
+	•	Planning Stage (optional, marked manually or through admin updates).
+	•	Implementation (optional, marked when actual changes begin).
+	•	Completed (when the issue is resolved).
+	•	Manual Updates:
+	•	The admin or project creator can manually update progress stages based on responses or government actions.
+
+7. Community Board Interactions
+	•	Users can:
+	•	Upvote projects they support.
+	•	Comment on projects (optional feature for future development).
+	•	Filter Projects by location, type of issue, or progress status.
+	•	Search for specific issues (like nearby crosswalk proposals).
+
+8. Admin Dashboard (Optional for MVP)
+	•	Admins can:
+	•	View and manage all project submissions.
+	•	Manually update project progress.
+	•	Approve or flag projects for quality control.
+	•	Track engagement metrics (like total emails sent, most upvoted projects).
+
+9. Notifications (Optional for MVP)
+	•	Users receive notifications for:
+	•	When a project they’ve supported receives an update.
+	•	When their submitted project progresses to a new stage.
+	•	When an official responds to their email.
+
+10. Deployment and User Feedback
+	•	Once the MVP is deployed:
+	•	Users can test and provide feedback.
+	•	The team can refine features, add new ones, and polish the interface.
+
+🎯 Key User Experience (UX) Principles
+	1.	Minimal Effort to Participate:
+	•	Just a few clicks to submit an issue, generate an email, and send it.
+	2.	Visual Progress Tracking:
+	•	Clear progress bars and stages keep users informed.
+	3.	Social Proof and Community Support:
+	•	Visible upvote counts and “Emails Sent” encourage more participation.
+	4.	Transparency:
+	•	All projects and their progress are publicly visible to encourage accountability.
+
+How the System Works in the Background
+	1.	Backend (Node.js + Express)
+	•	Handles API requests, stores data, and connects to external services like OpenAI.
+	2.	Database (PostgreSQL)
+	•	Stores all project data, user data, votes, and progress statuses.
+	3.	AI (OpenAI API)
+	•	Generates email drafts based on user inputs.
+	4.	Email Sending (SendGrid/Mailgun)
+	•	Automatically sends emails to designated local officials.
+	5.	Frontend (React)
+	•	Displays forms, community board, and interactive elements.
+
+⚡ The Core Loop (User Flow Summary)
+	1.	User Submits Issue → AI Generates Email → Email Sent → Project Appears on Board
+	2.	Community Upvotes → More Users Send Emails → Progress is Tracked
+	3.	Project Moves Towards Resolution → Progress Bar Updates → Community Stays Engaged
+
+
