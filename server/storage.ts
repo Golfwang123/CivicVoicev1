@@ -46,6 +46,10 @@ export interface IStorage {
   
   // Search and filter operations
   searchProjects(query: string): Promise<Project[]>;
+  
+  // Comment operations
+  createComment(comment: InsertComment): Promise<Comment>;
+  getCommentsByProject(projectId: number): Promise<Comment[]>;
 }
 
 // Memory storage implementation
@@ -55,12 +59,14 @@ export class MemStorage implements IStorage {
   private upvotes: Map<number, Upvote>;
   private emails: Map<number, Email>;
   private activities: Map<number, Activity>;
+  private comments: Map<number, Comment>;
   
   private userId: number;
   private projectId: number;
   private upvoteId: number;
   private emailId: number;
   private activityId: number;
+  private commentId: number;
   
   constructor() {
     this.users = new Map();
@@ -68,12 +74,14 @@ export class MemStorage implements IStorage {
     this.upvotes = new Map();
     this.emails = new Map();
     this.activities = new Map();
+    this.comments = new Map();
     
     this.userId = 1;
     this.projectId = 1;
     this.upvoteId = 1;
     this.emailId = 1;
     this.activityId = 1;
+    this.commentId = 1;
     
     // Add some sample data
     this.addSampleData();
@@ -300,6 +308,34 @@ export class MemStorage implements IStorage {
       .sort((a, b) => b.upvotes - a.upvotes);
   }
   
+  // Comment operations
+  async createComment(insertComment: InsertComment): Promise<Comment> {
+    const id = this.commentId++;
+    const comment: Comment = {
+      ...insertComment,
+      id,
+      createdAt: new Date()
+    };
+    
+    this.comments.set(id, comment);
+    
+    // Create an activity for this new comment
+    await this.createActivity({
+      projectId: comment.projectId,
+      activityType: 'comment_added',
+      actorName: comment.commenterName,
+      description: `New comment on project: ${this.projects.get(comment.projectId)?.title || 'Unknown Project'}`
+    });
+    
+    return comment;
+  }
+  
+  async getCommentsByProject(projectId: number): Promise<Comment[]> {
+    return Array.from(this.comments.values())
+      .filter(comment => comment.projectId === projectId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
   // Helper method to determine progress status based on upvotes and emails
   private determineProgressStatus(
     upvotes: number, 
@@ -407,6 +443,35 @@ export class MemStorage implements IStorage {
       actorName: 'Maria Lopez',
       description: 'Submitted a new issue: Broken Sidewalk on Oak Street'
     });
+    
+    // Add some sample comments
+    const comment1: Comment = {
+      id: this.commentId++,
+      projectId: project1.id,
+      text: "I cross this intersection daily and it's very dangerous. We definitely need a crosswalk here.",
+      commenterName: "David Chen",
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) // 5 days ago
+    };
+    
+    const comment2: Comment = {
+      id: this.commentId++,
+      projectId: project1.id,
+      text: "I witnessed a near-miss accident here last week. The city needs to take action quickly.",
+      commenterName: "Sarah Williams",
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) // 3 days ago
+    };
+    
+    const comment3: Comment = {
+      id: this.commentId++,
+      projectId: project3.id,
+      text: "My car was damaged by this pothole. It's much worse after the recent rain.",
+      commenterName: "Michael Rodriguez",
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) // 10 days ago
+    };
+    
+    this.comments.set(comment1.id, comment1);
+    this.comments.set(comment2.id, comment2);
+    this.comments.set(comment3.id, comment3);
   }
 }
 
