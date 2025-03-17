@@ -135,7 +135,8 @@ export class MemStorage implements IStorage {
       emailsSent: 0,
       progressStatus: 'idea_submitted',
       createdAt: new Date(),
-      createdBy: insertProject.createdBy || null
+      createdBy: insertProject.createdBy || null,
+      urgencyLevel: insertProject.urgencyLevel || "medium"
     };
     
     this.projects.set(id, project);
@@ -154,6 +155,11 @@ export class MemStorage implements IStorage {
   async updateProject(id: number, updates: Partial<Project>): Promise<Project | undefined> {
     const project = this.projects.get(id);
     if (!project) return undefined;
+    
+    // Type safety for progressStatus
+    if (updates.progressStatus) {
+      updates.progressStatus = updates.progressStatus as "idea_submitted" | "community_support" | "email_campaign_active" | "official_acknowledgment" | "planning_stage" | "implementation" | "completed";
+    }
     
     const updatedProject = { ...project, ...updates };
     this.projects.set(id, updatedProject);
