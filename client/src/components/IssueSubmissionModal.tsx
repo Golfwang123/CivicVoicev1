@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -216,7 +216,7 @@ export default function IssueSubmissionModal({ isOpen, onClose }: IssueSubmissio
                   <SelectValue placeholder="Select an issue type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Select an issue type</SelectItem>
+                  <SelectItem value="select">Select an issue type</SelectItem>
                   <SelectItem value="crosswalk">Crosswalk Needed</SelectItem>
                   <SelectItem value="pothole">Pothole</SelectItem>
                   <SelectItem value="sidewalk">Sidewalk Damage</SelectItem>
@@ -483,12 +483,12 @@ export default function IssueSubmissionModal({ isOpen, onClose }: IssueSubmissio
   return (
     <Dialog open={isOpen} onOpenChange={handleCloseAll}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center border-b border-gray-200 px-6 py-4">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <DialogTitle className="text-xl font-semibold text-gray-900 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <span>
             {currentStep === "details" ? "Submit a New Issue" : 
              currentStep === "email" ? "Review & Customize Email" : 
              "Success!"}
-          </h2>
+          </span>
           <Button
             variant="ghost"
             size="icon"
@@ -497,7 +497,7 @@ export default function IssueSubmissionModal({ isOpen, onClose }: IssueSubmissio
           >
             <i className="fas fa-times text-xl"></i>
           </Button>
-        </div>
+        </DialogTitle>
         
         <div className="px-6 py-4">
           {renderStepContent()}
