@@ -134,7 +134,8 @@ export class MemStorage implements IStorage {
       upvotes: 0,
       emailsSent: 0,
       progressStatus: 'idea_submitted',
-      createdAt: new Date()
+      createdAt: new Date(),
+      createdBy: insertProject.createdBy || null
     };
     
     this.projects.set(id, project);
@@ -176,7 +177,8 @@ export class MemStorage implements IStorage {
     const upvote: Upvote = {
       ...insertUpvote,
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      userId: insertUpvote.userId || null
     };
     
     this.upvotes.set(id, upvote);
@@ -217,7 +219,10 @@ export class MemStorage implements IStorage {
     const email: Email = {
       ...insertEmail,
       id,
-      sentAt: new Date()
+      sentAt: new Date(),
+      senderEmail: insertEmail.senderEmail || null,
+      senderName: insertEmail.senderName || null,
+      customContent: insertEmail.customContent || null
     };
     
     this.emails.set(id, email);
@@ -254,7 +259,8 @@ export class MemStorage implements IStorage {
     const activity: Activity = {
       ...insertActivity,
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      actorName: insertActivity.actorName || null
     };
     
     this.activities.set(id, activity);
@@ -341,10 +347,10 @@ export class MemStorage implements IStorage {
     upvotes: number, 
     emailsSent: number, 
     currentStatus: string
-  ): string {
+  ): "idea_submitted" | "community_support" | "email_campaign_active" | "official_acknowledgment" | "planning_stage" | "implementation" | "completed" {
     // Don't downgrade from these statuses
     if (['official_acknowledgment', 'planning_stage', 'implementation', 'completed'].includes(currentStatus)) {
-      return currentStatus;
+      return currentStatus as "official_acknowledgment" | "planning_stage" | "implementation" | "completed";
     }
     
     if (emailsSent >= 50) {
@@ -375,7 +381,7 @@ export class MemStorage implements IStorage {
       emailsSent: 38,
       progressStatus: "community_support",
       createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-      createdBy: undefined
+      createdBy: null
     };
     
     const project2: Project = {
@@ -395,7 +401,7 @@ export class MemStorage implements IStorage {
       emailsSent: 12,
       progressStatus: "idea_submitted",
       createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
-      createdBy: undefined
+      createdBy: null
     };
     
     const project3: Project = {
@@ -415,7 +421,7 @@ export class MemStorage implements IStorage {
       emailsSent: 52,
       progressStatus: "official_acknowledgment",
       createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000), // 21 days ago
-      createdBy: undefined
+      createdBy: null
     };
     
     this.projects.set(project1.id, project1);
